@@ -12,7 +12,20 @@
           "package_name": "mx.einnovacion.logicpos.restaurantes"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "363162713248-an3fmtut5s71ibfgrd12dh5foflkh3tt.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "mx.einnovacion.logicpos.restaurantes",
+            "certificate_hash": "b1eaccadcc6d27223d9a4941e793f716059edcb9"
+          }
+        },
+        {
+          "client_id": "363162713248-b2e4qnlt2p2sv2ggsihqscs41s57ft9q.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyCxzCypCmBzw3wEJ3E5lwmF0BzWxgsyPRU"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "363162713248-b2e4qnlt2p2sv2ggsihqscs41s57ft9q.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
