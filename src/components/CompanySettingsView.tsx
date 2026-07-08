@@ -197,7 +197,7 @@ export default function CompanySettingsView({
   const [credName, setCredName] = useState('');
   const [credUsername, setCredUsername] = useState('');
   const [credPassword, setCredPassword] = useState('');
-  const [credRole, setCredRole] = useState<'master_admin' | 'admin' | 'employee'>('employee');
+  const [credRole, setCredRole] = useState<'master_admin' | 'admin' | 'employee' | 'mesero'>('employee');
   const [credBranchId, setCredBranchId] = useState('');
   const [isCreatingCred, setIsCreatingCred] = useState(false);
   const [createdCredentialsShow, setCreatedCredentialsShow] = useState<{ companyId: string, name: string, username: string, password: string } | null>(null);
@@ -953,7 +953,7 @@ export default function CompanySettingsView({
           )}
           <h3 className="font-extrabold text-base text-slate-800 truncate">{companyName}</h3>
           <p className="text-[11px] font-bold uppercase text-indigo-500 py-0.5 px-2 bg-indigo-50 inline-block rounded mt-1">
-            Rol: {currentUserRole === 'owner' ? 'Dueño / Creador' : currentUserRole === 'admin' ? 'Administrador' : 'Empleado'}
+            Rol: {currentUserRole === 'owner' ? 'Dueño / Creador' : currentUserRole === 'admin' ? 'Administrador' : currentUserRole === 'mesero' ? 'Mesero' : 'Empleado'}
           </p>
           <div className="border-t border-slate-100 my-4 pt-3 text-left">
             <p className="text-[11px] text-slate-500 font-medium">ID de Comercio:</p>
@@ -1240,7 +1240,7 @@ export default function CompanySettingsView({
                               <span className="text-[10px] text-slate-500 font-bold uppercase shrink-0">Sucursal:</span>
                               <select
                                 value={member.assignedBranchId || ''}
-                                disabled={isUpdating || (currentUserRole === 'admin' && member.role !== 'employee')}
+                                disabled={isUpdating || (currentUserRole === 'admin' && member.role !== 'employee' && member.role !== 'mesero')}
                                 onChange={(e) => handleChangeMemberBranch(member.userId, member.name, e.target.value)}
                                 className="flex-1 min-w-0 max-w-[180px] text-[11px] bg-white border border-slate-300 hover:border-indigo-400 rounded px-1.5 py-0.5 outline-none font-bold text-slate-700 cursor-pointer truncate"
                               >
@@ -1269,9 +1269,11 @@ export default function CompanySettingsView({
                             <span className={`text-[11px] font-black uppercase py-1.5 px-3 rounded-full border shrink-0 ${
                               member.role === 'admin'
                                 ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                                : member.role === 'mesero'
+                                ? 'bg-amber-50 border-amber-200 text-amber-700'
                                 : 'bg-slate-100 border-slate-200 text-slate-600'
                             }`}>
-                              {member.role === 'admin' ? '🛡️ Encargado' : '💼 Cajero'}
+                              {member.role === 'admin' ? '🛡️ Encargado' : member.role === 'mesero' ? '🍽️ Mesero' : '💼 Cajero'}
                             </span>
 
                             {/* Assign extra tasks */}
@@ -1302,15 +1304,17 @@ export default function CompanySettingsView({
                                 ? 'bg-purple-50 border-purple-200 text-purple-700'
                                 : member.role === 'admin'
                                 ? 'bg-emerald-50 border-emerald-300 text-emerald-700'
-                                : 'bg-slate-50 border-slate-300 text-slate-700'
+                                : member.role === 'mesero'
+                                ? 'bg-amber-50 border-amber-300 text-amber-700'
+                                : 'bg-slate-55 border-slate-300 text-slate-700'
                             }`}>
-                              {member.role === 'master_admin' ? '🧙 Master Admin' : member.role === 'admin' ? '🛡️ Admin' : '💼 Empleado'}
+                              {member.role === 'master_admin' ? '🧙 Master Admin' : member.role === 'admin' ? '🛡️ Admin' : member.role === 'mesero' ? '🍽️ Mesero' : '💼 Empleado'}
                             </span>
                           </div>
                         )}
                         
                         {/* Remove Employee button */}
-                        {member.role !== 'owner' && (currentUserRole === 'owner' || currentUserRole === 'master_admin' || (currentUserRole === 'admin' && member.role === 'employee')) && (
+                        {member.role !== 'owner' && (currentUserRole === 'owner' || currentUserRole === 'master_admin' || (currentUserRole === 'admin' && (member.role === 'employee' || member.role === 'mesero'))) && (
                           deleteConfirmMemberId === member.userId ? (
                             <button
                               type="button"
@@ -1987,7 +1991,7 @@ export default function CompanySettingsView({
                 <div>
                   <h3 className="text-base font-black text-slate-800">Tareas Adicionales</h3>
                   <p className="text-[11px] text-slate-500 font-medium">
-                    {selectedRoleMember.name} · <span className={`font-black ${selectedRoleMember.role === 'admin' ? 'text-emerald-600' : 'text-indigo-600'}`}>{selectedRoleMember.role === 'admin' ? '🛡️ Encargado' : '💼 Cajero'}</span>
+                    {selectedRoleMember.name} · <span className={`font-black ${selectedRoleMember.role === 'admin' ? 'text-emerald-600' : selectedRoleMember.role === 'mesero' ? 'text-amber-600' : 'text-indigo-600'}`}>{selectedRoleMember.role === 'admin' ? '🛡️ Encargado' : selectedRoleMember.role === 'mesero' ? '🍽️ Mesero' : '💼 Cajero'}</span>
                   </p>
                 </div>
                 <button
@@ -2237,10 +2241,11 @@ export default function CompanySettingsView({
                         <label className="text-slate-600 font-bold block">Rol *</label>
                         <select
                           value={credRole}
-                          onChange={(e) => setCredRole(e.target.value as 'master_admin' | 'admin' | 'employee')}
+                          onChange={(e) => setCredRole(e.target.value as 'master_admin' | 'admin' | 'employee' | 'mesero')}
                           className="w-full bg-white border border-slate-200 rounded-lg p-2.5 outline-none focus:border-indigo-505 font-bold text-slate-705 cursor-pointer"
                         >
                           <option value="employee">💼 Cajero / Empleado</option>
+                          <option value="mesero">🍽️ Mesero</option>
                           <option value="admin">🛡️ Encargado / Gerente</option>
                         </select>
                       </div>
