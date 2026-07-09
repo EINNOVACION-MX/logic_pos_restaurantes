@@ -829,7 +829,7 @@ export default function CompanySettingsView({
     setTimeout(() => setCopiedLink(false), 2000);
   };
 
-  const handleChangeMemberRole = async (memberUserId: string, memberName: string, newRole: 'master_admin' | 'admin' | 'employee') => {
+  const handleChangeMemberRole = async (memberUserId: string, memberName: string, newRole: 'master_admin' | 'admin' | 'employee' | 'mesero') => {
     if (currentUserRole !== 'owner' && currentUserRole !== 'master_admin') {
       alert("No tienes permisos suficientes para editar roles. Solo el Dueño o Master Admin pueden modificar roles.");
       return;
@@ -847,7 +847,7 @@ export default function CompanySettingsView({
       await updateDoc(doc(db, 'companies', companyId, 'members', memberUserId), {
         role: newRole
       });
-      const roleLabel = newRole === 'master_admin' ? 'Master Admin' : newRole === 'admin' ? 'Administrador' : 'Empleado';
+      const roleLabel = newRole === 'master_admin' ? 'Master Admin' : newRole === 'admin' ? 'Administrador' : newRole === 'mesero' ? 'Mesero' : 'Empleado';
       alert(`Rol de ${memberName} actualizado exitosamente a ${roleLabel}.`);
     } catch (err) {
       handleFirestoreError(err, OperationType.UPDATE, `companies/${companyId}/members/${memberUserId}`);
@@ -1265,16 +1265,24 @@ export default function CompanySettingsView({
                           </span>
                         ) : (currentUserRole === 'owner' || currentUserRole === 'master_admin') ? (
                           <div className="flex flex-wrap items-center gap-2">
-                            {/* Role badge (read-only) */}
-                            <span className={`text-[11px] font-black uppercase py-1.5 px-3 rounded-full border shrink-0 ${
-                              member.role === 'admin'
-                                ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
-                                : member.role === 'mesero'
-                                ? 'bg-amber-50 border-amber-200 text-amber-700'
-                                : 'bg-slate-100 border-slate-200 text-slate-600'
-                            }`}>
-                              {member.role === 'admin' ? '🛡️ Administrador' : member.role === 'mesero' ? '🍽️ Mesero' : '💼 Cajero'}
-                            </span>
+                            {/* Role select dropdown (interactive for owner/master_admin) */}
+                            <select
+                              value={member.role}
+                              disabled={isUpdating}
+                              onChange={(e) => handleChangeMemberRole(member.userId, member.name, e.target.value as any)}
+                              className={`text-[11px] font-black uppercase py-1.5 px-3 rounded-full border cursor-pointer outline-none transition shadow-sm ${
+                                member.role === 'admin'
+                                  ? 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:border-emerald-400'
+                                  : member.role === 'mesero'
+                                  ? 'bg-amber-50 border-amber-200 text-amber-700 hover:border-amber-400'
+                                  : 'bg-slate-100 border-slate-200 text-slate-600 hover:border-slate-400'
+                              }`}
+                            >
+                              <option value="employee" className="bg-white text-slate-700">💼 Cajero</option>
+                              <option value="mesero" className="bg-white text-slate-700">🍽️ Mesero</option>
+                              <option value="admin" className="bg-white text-slate-700">🛡️ Administrador</option>
+                              {member.role === 'master_admin' && <option value="master_admin" className="bg-white text-slate-700">🧙 Master Admin</option>}
+                            </select>
 
                             {/* Assign extra tasks */}
                             <button

@@ -109,6 +109,7 @@ import {
 import CompanySelector from './components/CompanySelector';
 import CompanySettingsView from './components/CompanySettingsView';
 import AuditView from './components/AuditView';
+import WaiterShell from './components/WaiterShell';
 
 // UTF-8-safe string → base64 (plain btoa() mangles accented characters like á/é/í/ó/ú/ñ).
 const utf8ToBase64 = (str: string): string =>
@@ -671,6 +672,7 @@ export default function App() {
   // reference sales/orders/cash movements across the whole company. Separate from the
   // single-branch `cashRegister` below (used to actually operate the till).
   const [orders, setOrders] = useState<Order[]>([]);
+  const [tables, setTables] = useState<Table[]>([]);
   const [allCashRegisters, setAllCashRegisters] = useState<{ [branchId: string]: CashRegister }>({});
   const [selectedBranchId, setSelectedBranchId] = useState<string>('b1');
 
@@ -1304,6 +1306,15 @@ export default function App() {
       handleFirestoreError(error, OperationType.LIST, `companies/${compId}/orders`);
     });
 
+    const unsubTables = onSnapshot(collection(db, 'companies', compId, 'tables'), (snapshot) => {
+      const list: Table[] = [];
+      snapshot.forEach(d => list.push(d.data() as Table));
+      list.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+      setTables(list);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, `companies/${compId}/tables`);
+    });
+
     // Company-wide cash register log (every branch, not just the active one) — separate
     // from the single-branch `unsubCash` below, which drives the live till operations.
     // Existing rules already let any member list/get the whole cashRegisters collection.
@@ -1356,6 +1367,7 @@ export default function App() {
       unsubMembers();
       unsubSales();
       unsubOrders();
+      unsubTables();
       unsubAllCashRegisters();
       unsubStockMovements();
       unsubBranding();
@@ -3213,6 +3225,28 @@ export default function App() {
           </div>
         </div>
       </div>
+    );
+  }
+
+  if (user && activeCompanyId && activeCompanyRole === 'mesero') {
+    return (
+      <WaiterShell
+        user={user}
+        companyName={branding.displayName || userCompanies[activeCompanyId]?.name || 'Mi Comercio'}
+        currentUserMember={currentUserMember}
+        products={products}
+        branches={branches}
+        tables={tables}
+        orders={orders}
+        selectedBranchId={selectedBranchId}
+        branding={branding}
+        onLogout={() => signOut(auth)}
+        userAvailableCompanies={userCompanies}
+        onLeaveCompany={() => {
+          localStorage.removeItem(`logic_active_company_${user.uid}`);
+          setActiveCompanyId(null);
+        }}
+      />
     );
   }
 
