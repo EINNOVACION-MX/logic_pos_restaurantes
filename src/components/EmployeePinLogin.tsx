@@ -24,9 +24,7 @@ export default function EmployeePinLogin({
   const maxPinLength = 12;
 
   const handleKeyPress = (num: string) => {
-    if (pin.length < maxPinLength) {
-      setPin(pin + num);
-    }
+    setPin(prev => prev.length < maxPinLength ? prev + num : prev);
   };
 
   const handleBackspace = () => {
@@ -36,6 +34,34 @@ export default function EmployeePinLogin({
   const handleClear = () => {
     setPin('');
   };
+
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA') {
+        return;
+      }
+
+      if (e.key >= '0' && e.key <= '9') {
+        handleKeyPress(e.key);
+      } else if (e.key === 'Backspace') {
+        handleBackspace();
+      } else if (e.key === 'Escape' || e.key === 'Delete') {
+        handleClear();
+      } else if (e.key === 'Enter') {
+        setPin(currentPin => {
+          if (currentPin.length >= minPinLength && !isSubmitting) {
+            onPinSubmit && onPinSubmit(currentPin);
+          }
+          return currentPin;
+        });
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isSubmitting, onPinSubmit]);
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-[var(--brand-dark,#1e1b4b)] bg-radial-gradient from-slate-900/60 to-slate-950/90 relative overflow-hidden">
