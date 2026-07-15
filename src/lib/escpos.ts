@@ -136,6 +136,54 @@ export function buildReceiptEscPos(p: EscPosReceiptParams): Uint8Array {
   return b.toUint8Array();
 }
 
+// Kitchen/bar station ticket (Fase 5, "Enviar a Cocina/Barra") — deliberately separate from
+// buildReceiptEscPos: no prices/totals, just what the station needs to prep the round. Sent
+// over the network via printEscPosOverNetwork (src/lib/networkPrinter.ts), one call per
+// non-empty destination group.
+export interface EscPosComandaItem {
+  quantity: number;
+  name: string;
+}
+
+export interface EscPosComandaParams {
+  destinationLabel: string; // 'COCINA' | 'BARRA'
+  tableName: string;
+  waiterName: string;
+  round: number;
+  timestamp: string;
+  items: EscPosComandaItem[];
+  columns: number;
+}
+
+export function buildComandaTicket(p: EscPosComandaParams): Uint8Array {
+  const w = p.columns;
+  const b = new EscPosBuilder();
+
+  b.init();
+  b.align('center');
+  b.bold(true).doubleSize(true);
+  b.line(p.destinationLabel.toUpperCase());
+  b.doubleSize(false).bold(false);
+  b.line(`Mesa: ${p.tableName}  Ronda: ${p.round}`);
+
+  b.align('left');
+  b.line(sep(w));
+  b.line(`Mesero: ${p.waiterName}`);
+  b.line(`Hora: ${p.timestamp}`);
+  b.line(sep(w));
+
+  b.bold(true).doubleSize(true);
+  for (const it of p.items) {
+    b.line(`${it.quantity}x ${it.name}`);
+  }
+  b.doubleSize(false).bold(false);
+
+  b.feed(3);
+  b.cut();
+
+  return b.toUint8Array();
+}
+
 export function uint8ToBase64(bytes: Uint8Array): string {
   let binary = '';
   const chunkSize = 0x8000;
