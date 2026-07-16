@@ -6,9 +6,7 @@ import {
   Utensils, 
   Clock,
   CheckCircle,
-  FolderOpen,
-  Sun,
-  Moon
+  FolderOpen
 } from 'lucide-react';
 import TablesFloorView from './TablesFloorView';
 import ComandaView from './ComandaView';
@@ -92,6 +90,7 @@ interface WaiterShellProps {
   onSwitchCompany?: (companyId: string) => void;
   onLeaveCompany?: () => void;
   printConfig?: any;
+  onPrintReceipt?: (sale: any, options?: any) => void;
 }
 
 
@@ -113,28 +112,13 @@ export default function WaiterShell({
   userAvailableCompanies = {},
   onSwitchCompany,
   onLeaveCompany,
-  printConfig
+  printConfig,
+  onPrintReceipt
 }: WaiterShellProps) {
   const [activeTab, setActiveTab] = useState<'tables' | 'my-orders'>('tables');
   const [selectedTable, setSelectedTable] = useState<Table | null>(null);
   const [isManagingOrder, setIsManagingOrder] = useState(false);
   const [orderStatusFilter, setOrderStatusFilter] = useState<'open' | 'closed'>('open');
-
-  const [themeMode, setThemeMode] = useState<'light' | 'dark'>(() => {
-    return document.documentElement.classList.contains('dark') ? 'dark' : 'light';
-  });
-
-  const toggleTheme = () => {
-    const nextTheme = themeMode === 'dark' ? 'light' : 'dark';
-    setThemeMode(nextTheme);
-    if (nextTheme === 'dark') {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('logicpos_theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('logicpos_theme', 'light');
-    }
-  };
 
   // Find active orders by table ID
   const activeOrdersMap = useMemo(() => {
@@ -176,7 +160,7 @@ export default function WaiterShell({
   const activeBranchName = branches.find(b => b.id === selectedBranchId)?.name || 'Sucursal Principal';
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col font-sans select-none text-slate-800 dark:text-slate-100">
+    <div className="min-h-screen bg-slate-50 flex flex-col font-sans select-none text-slate-800">
       
       {/* Premium Header */}
       <header 
@@ -214,16 +198,6 @@ export default function WaiterShell({
             <span className="text-[9px] text-amber-500 font-extrabold uppercase tracking-widest flex items-center gap-1"><Utensils className="w-2.5 h-2.5" />Mesero</span>
           </div>
           
-          {/* Theme Toggle Button */}
-          <button 
-            type="button"
-            onClick={toggleTheme}
-            className="p-2 bg-slate-800/80 hover:bg-slate-700 text-slate-350 hover:text-white border border-slate-700 rounded-xl cursor-pointer transition shadow-sm flex items-center justify-center"
-            title={themeMode === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
-          >
-            {themeMode === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-300" />}
-          </button>
-
           {/* Switch Company if multi-company */}
           {Object.keys(userAvailableCompanies).length > 1 && onLeaveCompany && (
             <button 
@@ -247,7 +221,7 @@ export default function WaiterShell({
       </header>
 
       {/* Navigation Sub-header */}
-      <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 py-2 flex items-center justify-between shadow-sm shrink-0">
+      <div className="bg-white border-b border-slate-200 px-4 py-2 flex items-center justify-between shadow-sm shrink-0">
         <div className="flex space-x-1.5 w-full max-w-md">
           <button
             onClick={() => { 
@@ -257,8 +231,8 @@ export default function WaiterShell({
             }}
             className={`flex-1 py-2 px-3 text-xs font-black uppercase rounded-xl transition cursor-pointer text-center flex items-center justify-center gap-1.5 border ${
               activeTab === 'tables' 
-                ? 'bg-indigo-50 dark:bg-indigo-950/20 border-indigo-200 dark:border-indigo-900 text-indigo-755 dark:text-indigo-400 font-black' 
-                : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700'
+                ? 'bg-indigo-50 border-indigo-200 text-indigo-700 font-black' 
+                : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
             }`}
           >
             <Utensils className="w-4 h-4" />
@@ -309,6 +283,7 @@ export default function WaiterShell({
               }}
               onSaleComplete={onSaleComplete}
               printConfig={printConfig}
+              onPrintReceipt={onPrintReceipt}
             />
           ) : (
             <TablesFloorView

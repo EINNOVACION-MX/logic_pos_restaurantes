@@ -90,6 +90,7 @@ interface ComandaViewProps {
   onClose: () => void;
   onSaleComplete: (sale: any) => void;
   printConfig?: PrintConfig;
+  onPrintReceipt?: (sale: any, options?: any) => void;
 }
 
 const getProductStock = (prod: Product, branchId: string): number => {
@@ -109,7 +110,8 @@ export default function ComandaView({
   buildAndCommitSale,
   onClose,
   onSaleComplete,
-  printConfig
+  printConfig,
+  onPrintReceipt
 }: ComandaViewProps) {
   // Navigation & Search State
   const [searchTerm, setSearchTerm] = useState('');
@@ -147,6 +149,26 @@ export default function ComandaView({
       message,
       onConfirm
     });
+  };
+
+  // Toast notification system
+  const [toasts, setToasts] = useState<{
+    id: number;
+    type: 'success' | 'error' | 'warning';
+    title: string;
+    message: string;
+  }[]>([]);
+
+  const showToast = (type: 'success' | 'error' | 'warning', title: string, message: string) => {
+    const id = Date.now();
+    setToasts(prev => [...prev, { id, type, title, message }]);
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id));
+    }, 4500);
+  };
+
+  const dismissToast = (id: number) => {
+    setToasts(prev => prev.filter(t => t.id !== id));
   };
 
   // Categories list
@@ -234,7 +256,7 @@ export default function ComandaView({
       .reduce((sum, it) => sum + it.quantity, 0);
 
     if (existingTotalQty + 1 > availableStock) {
-      alert(`No hay stock suficiente de "${product.name}" en esta sucursal.\nDisponible: ${availableStock} u.\nYa solicitado/cargado: ${existingTotalQty} u.`);
+      showToast('warning', 'Stock insuficiente', `No hay stock suficiente de "${product.name}" en esta sucursal. Disponible: ${availableStock} u. Ya solicitado: ${existingTotalQty} u.`);
       return;
     }
 
@@ -282,7 +304,7 @@ export default function ComandaView({
           .reduce((sum, it) => sum + it.quantity, 0);
 
         if (existingTotalQty + delta > availableStock) {
-          alert(`No hay stock suficiente de "${item.name}". Disponible: ${availableStock} u.`);
+          showToast('warning', 'Stock insuficiente', `No hay stock suficiente de "${item.name}". Disponible: ${availableStock} u.`);
           return;
         }
       }
@@ -363,7 +385,7 @@ export default function ComandaView({
             );
           } catch (printErr: any) {
             console.error('Error al imprimir en Cocina:', printErr);
-            alert(`No se pudo imprimir la comanda en Cocina: ${printErr.message || String(printErr)}`);
+            showToast('error', 'Error de impresora · Cocina', printErr.message || String(printErr));
           }
         } else {
           console.warn('Impresión de Cocina omitida: No hay IP configurada.');
@@ -389,7 +411,7 @@ export default function ComandaView({
             );
           } catch (printErr: any) {
             console.error('Error al imprimir en Barra:', printErr);
-            alert(`No se pudo imprimir la comanda en Barra: ${printErr.message || String(printErr)}`);
+            showToast('error', 'Error de impresora · Barra', printErr.message || String(printErr));
           }
         } else {
           console.warn('Impresión de Barra omitida: No hay IP configurada.');
@@ -401,9 +423,10 @@ export default function ComandaView({
       await updateDoc(doc(db, 'companies', activeCompanyId, 'orders', order.id), {
         items: updatedItems
       });
-      alert(`¡Ronda #${newRoundNum} enviada correctamente a cocina/barra!`);
+      showToast('success', `Ronda #${newRoundNum} enviada`, 'Los artículos fueron enviados a cocina/barra correctamente.');
     } catch (err) {
       handleFirestoreError(err, OperationType.UPDATE, `companies/${activeCompanyId}/orders/${order.id}`);
+      showToast('error', 'Error al enviar ronda', 'No se pudo registrar la ronda. Intenta de nuevo.');
     }
   };
 
@@ -412,12 +435,12 @@ export default function ComandaView({
     if (!order || !activeCompanyId) return;
 
     if (paymentMethod === 'Credit' && !selectedCustomer) {
-      alert('Por favor, selecciona un cliente para registrar la venta al crédito ("Fiado").');
+      showToast('warning', 'Cliente requerido', 'Selecciona un cliente para registrar la venta al crédito ("Fiado").');
       return;
     }
 
     if ((paymentMethod === 'Card' || paymentMethod === 'Transfer') && !folioNumber.trim()) {
-      alert('Para pagos con Tarjeta o Transferencia, es obligatorio ingresar el número de Folio.');
+      showToast('warning', 'Folio requerido', 'Para pagos con Tarjeta o Transferencia es obligatorio ingresar el número de Folio.');
       return;
     }
 
@@ -461,12 +484,27 @@ export default function ComandaView({
 
       await batch.commit();
 
+      if (onPrintReceipt) {
+        onPrintReceipt(newSale, {
+          onSuccess: () => {
+            showToast('success', 'Ticket impreso', 'El ticket de venta se envió a la impresora.');
+          },
+          onError: (msg) => {
+            showToast('error', 'Error al imprimir', msg);
+          }
+        });
+      }
+
+      showToast('success', '¡Mesa cobrada!', `Venta registrada correctamente. Folio: ${newSale.id.slice(-8).toUpperCase()}`);
       setIsCheckoutOpen(false);
-      onSaleComplete(newSale);
-      onClose();
+      if (onSaleComplete) {
+        onSaleComplete(newSale);
+      }
+      // Increased delay so the success toasts (paid and printed) are visible before unmounting
+      setTimeout(() => onClose(), 4000);
     } catch (err: any) {
       console.error(err);
-      alert('Error al cerrar la cuenta: ' + (err.message || String(err)));
+      showToast('error', 'Error al cobrar', err.message || String(err));
     } finally {
       setIsSubmittingCheckout(false);
     }
@@ -665,7 +703,12 @@ export default function ComandaView({
                     type="button"
                     onClick={() => {
                       if (groupedRounds.draft.length > 0) {
-                        alert('Por favor, envía o cancela la ronda en borrador antes de cobrar la cuenta.');
+                        showToast('warning', 'Ronda pendiente', 'Hay artículos en borrador que aún no se enviaron a cocina/barra. Envíalos o elimínalos antes de cobrar.');
+                        return;
+                      }
+                      const hasSentItems = order.items.some(it => !!it.sentAt);
+                      if (!hasSentItems) {
+                        showToast('warning', 'Sin pedido enviado', 'No se ha enviado ningún pedido a cocina o barra. Agrega artículos y envíalos antes de cobrar la mesa.');
                         return;
                       }
                       setIsCheckoutOpen(true);
@@ -1091,6 +1134,70 @@ export default function ComandaView({
           </div>
         </div>
       )}
+
+      {/* ── Toast Notification Stack — Banner completo con color sólido ── */}
+      {toasts.length > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 z-[200] flex flex-col pointer-events-none">
+          {toasts.map(toast => {
+            const isSuccess = toast.type === 'success';
+            const isError   = toast.type === 'error';
+            const bgClass   = isSuccess
+              ? 'bg-emerald-600'
+              : isError
+              ? 'bg-rose-600'
+              : 'bg-amber-500';
+            const icon = isSuccess ? '✅' : isError ? '❌' : '⚠️';
+            return (
+              <div
+                key={toast.id}
+                className={`pointer-events-auto relative flex items-center w-full overflow-hidden shadow-2xl ${bgClass} text-white border-t border-white/10`}
+                style={{ animation: 'bannerSlideUp 0.4s cubic-bezier(0.34,1.4,0.64,1) both' }}
+              >
+                {/* Icon */}
+                <div className="flex items-center px-4 py-3.5 shrink-0 text-2xl">
+                  {icon}
+                </div>
+
+                {/* Text */}
+                <div className="flex-1 flex flex-col justify-center py-3.5 min-w-0">
+                  <span className="font-black text-xs uppercase tracking-wider opacity-100 leading-tight">
+                    {toast.title}
+                  </span>
+                  <span className="text-[12px] font-medium opacity-90 mt-0.5 leading-snug break-words">
+                    {toast.message}
+                  </span>
+                </div>
+
+                {/* Close */}
+                <button
+                  onClick={() => dismissToast(toast.id)}
+                  className="shrink-0 flex items-center px-5 py-3.5 text-white/70 hover:text-white transition cursor-pointer text-lg font-black"
+                  title="Cerrar"
+                >
+                  ✕
+                </button>
+
+                {/* Progress bar */}
+                <div
+                  className="absolute bottom-0 left-0 h-[3px] bg-white/30"
+                  style={{ animation: 'toastProgress 4.5s linear forwards' }}
+                />
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <style>{`
+        @keyframes bannerSlideUp {
+          from { opacity: 0; transform: translateY(100%); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes toastProgress {
+          from { width: 100%; }
+          to   { width: 0%; }
+        }
+      `}</style>
 
     </div>
   );

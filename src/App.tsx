@@ -35,8 +35,6 @@ import {
   LayoutGrid,
   List,
   Utensils,
-  Sun,
-  Moon,
   ArrowDownCircle,
   ArrowUpCircle,
   RefreshCw,
@@ -422,28 +420,14 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<'products' | 'customers' | 'tables' | 'history' | 'analytics' | 'branches' | 'suppliers' | 'settings' | 'invoicing' | 'audit'>('tables');
   const [branding, setBranding] = useState<Branding>({});
 
-  const [themeMode, setThemeMode] = useState<'light' | 'dark'>(() => {
-    try {
-      const saved = localStorage.getItem('logicpos_theme');
-      if (saved === 'dark' || saved === 'light') return saved;
-      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    } catch {
-      return 'light';
-    }
-  });
-
   useEffect(() => {
     try {
-      if (themeMode === 'dark') {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
-      localStorage.setItem('logicpos_theme', themeMode);
+      document.documentElement.classList.remove('dark');
+      localStorage.removeItem('logicpos_theme');
     } catch (e) {
       console.error(e);
     }
-  }, [themeMode]);
+  }, []);
   const [printConfig, setPrintConfig] = useState<PrintConfig>(DEFAULT_PRINT_CONFIG);
 
   // Selected Bluetooth thermal printer (e.g. MERION PT-B1). Tied to this physical device, not
@@ -1910,7 +1894,7 @@ export default function App() {
   // view the user couldn't back out of (had to kill the app). A hidden iframe calls the
   // host's own print dialog (Android's system print → Bluetooth/WiFi printers or Save-as-PDF;
   // the OS handles printer selection), keeps the user in the app, and cleans itself up.
-  const handlePrintReceipt = (sale: Sale) => {
+  const handlePrintReceipt = (sale: Sale, options?: { onSuccess?: () => void; onError?: (msg: string) => void }) => {
     const ticketBusinessName = branding.displayName || (activeCompanyId ? userCompanies[activeCompanyId]?.name : '') || 'Mi Comercio';
     const ticketTagline = branding.tagline || '';
     const ticketLogo = (printConfig.showLogo && branding.logoUrl) ? branding.logoUrl : '';
@@ -2020,10 +2004,16 @@ export default function App() {
       // Thermal ESC/POS printers (e.g. MERION PT-B1) don't implement Android's Print
       // Framework, so they never appear in ReceiptPrinter's system dialog below — instead we
       // talk straight to the paired device over Bluetooth SPP with raw ESC/POS bytes.
-      BluetoothPrinter.printEscPos({ address: bluetoothPrinter.address, data: uint8ToBase64(buildEscPosTicket()) }).catch(err => {
-        console.error('Bluetooth print error:', err);
-        alert(`No se pudo imprimir en "${bluetoothPrinter.name}". Verifica que esté encendida y emparejada.`);
-      });
+      BluetoothPrinter.printEscPos({ address: bluetoothPrinter.address, data: uint8ToBase64(buildEscPosTicket()) })
+        .then(() => {
+          options?.onSuccess?.();
+        })
+        .catch(err => {
+          console.error('Bluetooth print error:', err);
+          const msg = `No se pudo imprimir en "${bluetoothPrinter.name}". Verifica que esté encendida y emparejada.`;
+          if (options?.onError) options.onError(msg);
+          else alert(msg);
+        });
       return;
     }
 
@@ -2032,10 +2022,16 @@ export default function App() {
       // native support wired up (see ReceiptPrinterPlugin.java), which loads this HTML into
       // its own offscreen WebView and hands it to android.print.PrintManager. That's the
       // native "elige tu impresora" dialog: Bluetooth/WiFi printers or Guardar como PDF.
-      ReceiptPrinter.print({ html: ticketText, jobName: `Ticket ${sale.id}` }).catch(err => {
-        console.error('Native print error:', err);
-        alert('No se pudo abrir el diálogo de impresión. Intenta de nuevo.');
-      });
+      ReceiptPrinter.print({ html: ticketText, jobName: `Ticket ${sale.id}` })
+        .then(() => {
+          options?.onSuccess?.();
+        })
+        .catch(err => {
+          console.error('Native print error:', err);
+          const msg = 'No se pudo abrir el diálogo de impresión. Intenta de nuevo.';
+          if (options?.onError) options.onError(msg);
+          else alert(msg);
+        });
       return;
     }
 
@@ -2045,19 +2041,31 @@ export default function App() {
       const printPromise = webUsbDevice
         ? printUsb(webUsbDevice, buildEscPosTicket())
         : printBluetooth(webBluetoothDevice!, buildEscPosTicket());
-      printPromise.catch(err => {
-        console.error('Web printer error:', err);
-        alert(`No se pudo imprimir en "${webPrinterInfo?.name || 'la impresora'}". ${err?.message || ''}`);
-      });
+      printPromise
+        .then(() => {
+          options?.onSuccess?.();
+        })
+        .catch(err => {
+          console.error('Web printer error:', err);
+          const msg = `No se pudo imprimir en "${webPrinterInfo?.name || 'la impresora'}". ${err?.message || ''}`;
+          if (options?.onError) options.onError(msg);
+          else alert(msg);
+        });
       return;
     }
 
     if (webPrinterInfo) {
       // A Bluetooth printer was configured, but Web Bluetooth doesn't allow silently
       // reattaching after a page reload the way WebUSB does — needs one click to resume.
-      alert(`Reconecta tu impresora "${webPrinterInfo.name}" desde Ajustes > Impresora antes de imprimir.`);
+      const msg = `Reconecta tu impresora "${webPrinterInfo.name}" desde Ajustes > Impresora antes de imprimir.`;
+      if (options?.onError) options.onError(msg);
+      else alert(msg);
       return;
     }
+
+    // Web: open the ticket in its own tab that prints itself on load.
+    // Open flow runs synchronously; trigger onSuccess directly.
+    options?.onSuccess?.();
 
     // Web: open the ticket in its own tab that prints itself on load. This is the only
     // approach verified to render correctly on Chrome for Android (tested on the client's
@@ -3391,6 +3399,7 @@ export default function App() {
           setActiveCompany(null);
         }}
         printConfig={printConfig}
+        onPrintReceipt={handlePrintReceipt}
       />
     );
   }
@@ -3481,15 +3490,6 @@ export default function App() {
               <p className="text-[9px] leading-none truncate max-w-[120px]" style={{ color: 'color-mix(in srgb, var(--brand-primary) 70%, white)' }}>{user.email}</p>
             </div>
             <div className="flex space-x-1 lg:space-x-1.5 flex-shrink-0">
-              <button
-                type="button"
-                onClick={() => setThemeMode(prev => prev === 'dark' ? 'light' : 'dark')}
-                className="p-1.5 rounded-lg text-white cursor-pointer transition select-none border flex items-center justify-center"
-                style={{ backgroundColor: 'color-mix(in srgb, var(--brand-dark) 70%, black)', borderColor: 'color-mix(in srgb, var(--brand-primary) 35%, transparent)' }}
-                title={themeMode === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
-              >
-                {themeMode === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-300" />}
-              </button>
               <button
                 onClick={() => { localStorage.removeItem(`logic_active_company_${user.uid}`); setActiveCompanyId(null); }}
                 className="text-[9px] lg:text-[10px] text-white font-bold px-2 lg:px-2.5 py-1 rounded-lg cursor-pointer transition select-none border"
@@ -3677,6 +3677,7 @@ export default function App() {
                 }}
                 onSaleComplete={setLastCompletedSale}
                 printConfig={printConfig}
+                onPrintReceipt={handlePrintReceipt}
               />
             ) : (
               <TablesFloorView
