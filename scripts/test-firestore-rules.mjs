@@ -24,6 +24,9 @@ const PROJECT_ID = 'demo-logic-pos-restaurantes';
 const COMPANY_ID = 'comp_test001';
 const OWNER_UID = 'owner-uid';
 const MESERO_UID = 'mesero-uid';
+const ADMIN_UID = 'admin-uid';
+const EMPLOYEE_UID = 'employee-uid';
+const PLAIN_EMPLOYEE_UID = 'plain-employee-uid'; // kept untouched by the role/branch tests above
 
 let passed = 0;
 let failed = 0;
@@ -71,6 +74,28 @@ await testEnv.withSecurityRulesDisabled(async (ctx) => {
     email: 'mesero@logicpos.com',
     role: 'mesero',
   });
+  await setDoc(doc(db, 'companies', COMPANY_ID, 'members', ADMIN_UID), {
+    userId: ADMIN_UID,
+    name: 'Admin Test',
+    email: 'admin@logicpos.com',
+    role: 'admin',
+  });
+  await setDoc(doc(db, 'companies', COMPANY_ID, 'members', EMPLOYEE_UID), {
+    userId: EMPLOYEE_UID,
+    name: 'Employee Test',
+    email: 'employee@logicpos.com',
+    role: 'employee',
+  });
+  await setDoc(doc(db, 'companies', COMPANY_ID, 'members', PLAIN_EMPLOYEE_UID), {
+    userId: PLAIN_EMPLOYEE_UID,
+    name: 'Plain Employee Test',
+    email: 'plain-employee@logicpos.com',
+    role: 'employee',
+  });
+  await setDoc(doc(db, 'companies', COMPANY_ID, 'suppliers', 'sup1'), {
+    id: 'sup1',
+    name: 'Proveedor Test',
+  });
   await setDoc(doc(db, 'companies', COMPANY_ID, 'tables', 'table1'), {
     id: 'table1',
     name: 'Mesa 1',
@@ -90,8 +115,14 @@ await testEnv.withSecurityRulesDisabled(async (ctx) => {
 
 const meseroCtx = testEnv.authenticatedContext(MESERO_UID, { email: 'mesero@logicpos.com', email_verified: true });
 const ownerCtx = testEnv.authenticatedContext(OWNER_UID, { email: 'owner@logicpos.com', email_verified: true });
+const adminCtx = testEnv.authenticatedContext(ADMIN_UID, { email: 'admin@logicpos.com', email_verified: true });
+const employeeCtx = testEnv.authenticatedContext(EMPLOYEE_UID, { email: 'employee@logicpos.com', email_verified: true });
+const plainEmployeeCtx = testEnv.authenticatedContext(PLAIN_EMPLOYEE_UID, { email: 'plain-employee@logicpos.com', email_verified: true });
 const meseroDb = meseroCtx.firestore();
 const ownerDb = ownerCtx.firestore();
+const adminDb = adminCtx.firestore();
+const employeeDb = employeeCtx.firestore();
+const plainEmployeeDb = plainEmployeeCtx.firestore();
 
 console.log('\n=== MESERO: deberia poder abrir mesa/comanda, no tocar catalogo ===');
 
@@ -153,6 +184,46 @@ await check('owner: SI puede editar el catalogo (precio de venta)', () =>
 
 await check('owner: SI puede borrar una orden', () =>
   assertSucceeds(deleteDoc(doc(ownerDb, 'companies', COMPANY_ID, 'orders', 'order1')))
+);
+
+console.log('\n=== ASIGNACION DE SUCURSAL: solo el owner puede reasignarla ===');
+
+await check('admin: NO puede reasignar la sucursal de un empleado', () =>
+  assertFails(updateDoc(doc(adminDb, 'companies', COMPANY_ID, 'members', EMPLOYEE_UID), {
+    assignedBranchId: 'B-9999',
+  }))
+);
+
+await check('admin: SI puede seguir cambiando el rol de un empleado (no regresion)', () =>
+  assertSucceeds(updateDoc(doc(adminDb, 'companies', COMPANY_ID, 'members', EMPLOYEE_UID), {
+    role: 'admin',
+  }))
+);
+
+await check('owner: SI puede reasignar la sucursal de un empleado', () =>
+  assertSucceeds(updateDoc(doc(ownerDb, 'companies', COMPANY_ID, 'members', EMPLOYEE_UID), {
+    assignedBranchId: 'B-9999',
+  }))
+);
+
+console.log('\n=== PERMISO EXTRA suppliers_restock ===');
+
+await check('empleado SIN permiso: NO puede editar un proveedor', () =>
+  assertFails(updateDoc(doc(plainEmployeeDb, 'companies', COMPANY_ID, 'suppliers', 'sup1'), {
+    category: 'Bebidas',
+  }))
+);
+
+await testEnv.withSecurityRulesDisabled(async (ctx) => {
+  await updateDoc(doc(ctx.firestore(), 'companies', COMPANY_ID, 'members', PLAIN_EMPLOYEE_UID), {
+    permissions: ['suppliers_restock'],
+  });
+});
+
+await check('empleado CON permiso suppliers_restock: SI puede editar un proveedor', () =>
+  assertSucceeds(updateDoc(doc(plainEmployeeDb, 'companies', COMPANY_ID, 'suppliers', 'sup1'), {
+    category: 'Bebidas',
+  }))
 );
 
 await testEnv.cleanup();

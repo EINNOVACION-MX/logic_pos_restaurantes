@@ -269,11 +269,14 @@ service cloud.firestore {
         );
 
         // Updating a member: owner can do anything; admin/master_admin can only touch members
-        // who are currently 'employee' or 'admin', and may only grant 'employee' or 'admin'
+        // who are currently 'employee' or 'admin', and may only grant 'employee' or 'admin'.
+        // Reassigning assignedBranchId is owner-only regardless of target role - not just a
+        // client-side restriction, admin/master_admin are blocked here too.
         allow update: if isVerifiedUser() && isMemberOfCompany(companyId) && isValidCompanyMember(incoming()) &&
           incoming().userId == memberId && existing().userId == memberId && (
             getMemberRole(companyId) == 'owner' ||
-            (isValidRoleGrant(getMemberRole(companyId), incoming().role) &&
+            (!incoming().diff(existing()).affectedKeys().hasAny(['assignedBranchId']) &&
+              isValidRoleGrant(getMemberRole(companyId), incoming().role) &&
               existing().role != 'owner' && existing().role != 'master_admin')
           );
 

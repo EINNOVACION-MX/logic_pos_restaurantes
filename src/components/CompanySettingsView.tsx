@@ -954,19 +954,13 @@ export default function CompanySettingsView({
   };
 
   const handleChangeMemberBranch = async (memberUserId: string, memberName: string, newBranchId: string) => {
-    if (currentUserRole !== 'owner' && currentUserRole !== 'master_admin' && currentUserRole !== 'admin') {
-      alert("No tienes permisos suficientes para asignar sucursales.");
+    if (currentUserRole !== 'owner') {
+      alert("Solo el Dueño puede asignar la sucursal de un colaborador.");
       return;
     }
 
     const memberToUpdate = members.find(m => m.userId === memberUserId);
     if (!memberToUpdate) return;
-
-    // Admin can only assign employees, Owner & Master Admin can assign any role
-    if (currentUserRole === 'admin' && memberToUpdate.role !== 'employee') {
-      alert("Como Administrador, solo puedes asignar sucursales a Empleados.");
-      return;
-    }
 
     setIsUpdating(true);
     try {
@@ -1329,13 +1323,14 @@ export default function CompanySettingsView({
                             </div>
                           )}
 
-                          {/* Branch indicator and switching option */}
-                          {member.role !== 'owner' && (currentUserRole === 'owner' || currentUserRole === 'admin') ? (
+                          {/* Branch indicator and switching option — only the Owner may reassign a
+                              collaborator's branch directly */}
+                          {member.role !== 'owner' && currentUserRole === 'owner' ? (
                             <div className="mt-2 flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-lg p-1.5 pr-2 max-w-full">
                               <span className="text-[10px] text-slate-500 font-bold uppercase shrink-0">Sucursal:</span>
                               <select
                                 value={member.assignedBranchId || ''}
-                                disabled={isUpdating || (currentUserRole === 'admin' && member.role !== 'employee' && member.role !== 'mesero')}
+                                disabled={isUpdating}
                                 onChange={(e) => handleChangeMemberBranch(member.userId, member.name, e.target.value)}
                                 className="flex-1 min-w-0 max-w-[180px] text-[11px] bg-white border border-slate-300 hover:border-indigo-400 rounded px-1.5 py-0.5 outline-none font-bold text-slate-700 cursor-pointer truncate"
                               >
