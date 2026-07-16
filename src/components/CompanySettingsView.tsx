@@ -696,6 +696,12 @@ export default function CompanySettingsView({
       console.error(err);
       if (err.code === 'auth/operation-not-allowed' || (err.message && err.message.includes('operation-not-allowed'))) {
         alert("⚠️ ATENCIÓN: El proveedor de Correo/Contraseña está deshabilitado en Firebase.\n\nPara habilitarlo y poder crear cuentas de empleados sin cuenta de Google, sigue estos pasos sencillos:\n1. Ve a console.firebase.google.com y selecciona tu proyecto.\n2. Haz clic en 'Authentication' en el menú lateral de la izquierda.\n3. Abre la pestaña 'Sign-in method' (Método de inicio de sesión).\n4. Haz clic en 'Agregar un proveedor nuevo' (O editar el existente) y activa 'Correo electrónico/contraseña'.\n5. Guarda los cambios.");
+      } else if (err.code === 'auth/email-already-in-use' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+        // createCredentialUser already retries this exact case by signing into the
+        // existing account (a previously-deleted employee reusing the same number) -
+        // reaching here means that retry itself failed, i.e. the orphaned account's
+        // password no longer matches its own number. Genuinely rare; not auto-recoverable.
+        alert(`El número de empleado "${cleanUsername}" ya fue usado antes por otra cuenta y no se pudo recuperar automáticamente. Por favor usa un número diferente.`);
       } else {
         alert("No se pudo crear la cuenta de empleado. Código error de nube: " + (err.message || String(err)));
       }

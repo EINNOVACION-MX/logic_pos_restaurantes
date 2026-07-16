@@ -1,5 +1,5 @@
 import { initializeApp, getApps } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, createUserWithEmailAndPassword } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 import { initializeFirestore, getFirestore, persistentLocalCache, persistentMultipleTabManager, doc, getDocFromServer } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
 
@@ -61,11 +61,29 @@ export async function createCredentialUser(email: string, password: string): Pro
     secondaryApp = initializeApp(firebaseConfig, secondaryAppName);
   }
   const secondaryAuth = getAuth(secondaryApp);
-  const userCredential = await createUserWithEmailAndPassword(secondaryAuth, email, password);
-  const uid = userCredential.user.uid;
-  // Sign out of the secondary auth sandbox so it is ready for the next usage and does not leak memory
-  await secondaryAuth.signOut();
-  return uid;
+  try {
+    const userCredential = await createUserWithEmailAndPassword(secondaryAuth, email, password);
+    const uid = userCredential.user.uid;
+    // Sign out of the secondary auth sandbox so it is ready for the next usage and does not leak memory
+    await secondaryAuth.signOut();
+    return uid;
+  } catch (err: any) {
+    // Deleting an employee (CompanySettingsView "Eliminar") only removes their Firestore
+    // member doc - it can't also delete their Firebase Auth account (that needs the Admin
+    // SDK, which this client-only app doesn't have). Reusing that same employee number
+    // later collides on the still-existing Auth account. The password is always the
+    // employee number itself, so the same email+password pair can only ever belong to
+    // that same orphaned account - safe to sign into it and reclaim its uid instead of
+    // leaving the number permanently unusable. The caller already checked no *active*
+    // member holds this number before reaching here.
+    if (err.code === 'auth/email-already-in-use') {
+      const signedIn = await signInWithEmailAndPassword(secondaryAuth, email, password);
+      const uid = signedIn.user.uid;
+      await secondaryAuth.signOut();
+      return uid;
+    }
+    throw err;
+  }
 }
 
 // Error handling types and helpers as required by prompt
