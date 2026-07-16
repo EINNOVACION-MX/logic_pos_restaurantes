@@ -1260,7 +1260,13 @@ export default function App() {
     return () => unsubMemberSelf();
   }, [user, activeCompanyId, userCompanies]);
 
-  // Lock the branch selector for employees
+  // Lock the branch selector for employees, and self-heal it for everyone else. The initial
+  // state is the placeholder 'b1' (see useState above), which never matches a real branch —
+  // ids are always generated as 'B-XXXX' (handleSaveBranch) — so a brand-new company that
+  // registers its first branch and starts selling right away, without ever touching the
+  // switcher, would otherwise stamp every sale/stock movement with 'b1' forever. Same
+  // placeholder-recovery applies to a stale id left in `logic_active_branch` (localStorage,
+  // not scoped per company) from a previously active company or a since-deleted branch.
   useEffect(() => {
     if (!user || !activeCompanyId) return;
 
@@ -1271,8 +1277,15 @@ export default function App() {
         setSelectedBranchId(currentUserMember.assignedBranchId);
         localStorage.setItem('logic_active_branch', currentUserMember.assignedBranchId);
       }
+      return;
     }
-  }, [currentUserMember, activeCompanyRole, selectedBranchId, activeCompanyId, user]);
+
+    if (branches.length > 0 && !branches.some(b => b.id === selectedBranchId)) {
+      const fallback = branches.find(b => b.isMatriz) || branches[0];
+      setSelectedBranchId(fallback.id);
+      localStorage.setItem('logic_active_branch', fallback.id);
+    }
+  }, [currentUserMember, activeCompanyRole, selectedBranchId, activeCompanyId, user, branches]);
 
   // Sync state from Firestore
   useEffect(() => {
