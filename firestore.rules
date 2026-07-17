@@ -343,11 +343,12 @@ service cloud.firestore {
       // Cash Registers subcollection inside Company
       match /cashRegisters/{registerId} {
         allow list, get: if isSignedIn() && isMemberOfCompany(companyId);
-        // Any member can update the running register (every sale touches currentCash)
-        allow update: if isVerifiedUser() && isMemberOfCompany(companyId) && isValidId(registerId) && isValidCashRegister(incoming());
-        // Only owner/admin can create a new register doc or remove one entirely
-        allow create, delete: if isVerifiedUser() && isOwnerOrAdmin(companyId) && isValidId(registerId) &&
-          (request.method == 'delete' || isValidCashRegister(incoming()));
+        // Any member can update the running register (every sale touches currentCash) or
+        // create one — opening/closing a shift's till is routine for Cajero/Mesero too, not
+        // just Owner/Admin, and a brand-new branch has no register doc until someone opens it.
+        allow update, create: if isVerifiedUser() && isMemberOfCompany(companyId) && isValidId(registerId) && isValidCashRegister(incoming());
+        // Deleting a register doc entirely stays owner/admin-only (destructive).
+        allow delete: if isVerifiedUser() && isOwnerOrAdmin(companyId) && isValidId(registerId);
       }
 
       // Settings subcollection (branding, config, etc.)
