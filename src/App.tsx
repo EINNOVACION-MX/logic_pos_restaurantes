@@ -4313,14 +4313,84 @@ export default function App() {
         buildAndCommitSale={buildAndCommitSale}
         onSaleComplete={setLastCompletedSale}
         userAvailableCompanies={userCompanies}
-        onLeaveCompany={() => {
+        onLeaveCompany={async () => {
           localStorage.removeItem(`logic_active_company_${user.uid}`);
           setActiveCompanyId(null);
           setActiveCompany(null);
+          if (user) {
+            await setDoc(doc(db, 'users', user.uid), { activeCompanyId: null }, { merge: true }).catch(console.error);
+          }
         }}
         printConfig={printConfig}
         onPrintReceipt={handlePrintReceipt}
         onPrintPrecuenta={handlePrintPrecuenta}
+      />
+    );
+  }
+
+  // Early return: If user is authenticated but has not selected/loaded a company, show Selector
+  if (user && !isAuthLoading && !activeCompanyId) {
+    if (isCredentialEmployee) {
+      return (
+        <div className="fixed inset-0 z-50 bg-slate-900 flex flex-col items-center justify-center p-6 text-center">
+          {credentialBootstrapFailed ? (
+            <>
+              <div className="w-16 h-16 rounded-2xl bg-rose-900/40 border border-rose-700/30 flex items-center justify-center mb-5">
+                <AlertCircle className="w-8 h-8 text-rose-400" />
+              </div>
+              <h2 className="text-xl font-black text-slate-100 mb-2">No pudimos verificar tu cuenta</h2>
+              <p className="text-slate-400 text-sm max-w-xs leading-relaxed mb-6">
+                Revisa tu conexión a internet e intenta de nuevo. Si el problema sigue, avisa a tu encargado.
+              </p>
+              <button
+                onClick={() => { setCredentialBootstrapFailed(false); setBootstrapRetryTrigger(n => n + 1); }}
+                className="px-6 py-2.5 mb-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl shadow cursor-pointer transition"
+              >
+                Reintentar
+              </button>
+            </>
+          ) : (
+            <>
+              <div className="w-16 h-16 rounded-2xl bg-indigo-900/40 border border-indigo-700/30 flex items-center justify-center mb-5">
+                <ShoppingCart className="w-8 h-8 text-indigo-400 animate-pulse" />
+              </div>
+              <h2 className="text-xl font-black text-slate-100 mb-2">Conectando al sistema...</h2>
+              <p className="text-slate-400 text-sm max-w-xs leading-relaxed mb-6">
+                Estamos verificando tus credenciales y cargando tu sucursal asignada.
+              </p>
+              <div className="flex gap-1.5 mb-8">
+                <span className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                <span className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                <span className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+              </div>
+            </>
+          )}
+          <button
+            onClick={() => signOut(auth)}
+            className="text-xs text-slate-500 hover:text-slate-300 underline cursor-pointer transition"
+          >
+            Salir e intentar de nuevo
+          </button>
+        </div>
+      );
+    }
+
+    return (
+      <CompanySelector
+        companies={userCompanies}
+        userDisplayName={user.displayName}
+        userEmail={user.email}
+        onCreateCompany={handleCreateCompany}
+        onJoinWithCode={handleJoinCompanyWithCode}
+        onSelectCompany={async (id) => {
+          localStorage.setItem(`logic_active_company_${user.uid}`, id);
+          setActiveCompanyId(id);
+          if (user) {
+            await setDoc(doc(db, 'users', user.uid), { activeCompanyId: id }, { merge: true }).catch(console.error);
+          }
+        }}
+        onDeleteCompany={handleDeleteCompany}
+        onLogout={() => signOut(auth)}
       />
     );
   }
@@ -4449,7 +4519,14 @@ export default function App() {
             <div className="flex space-x-1 lg:space-x-1.5 flex-shrink-0">
               {(!currentUserMember || currentUserMember?.role === 'owner') && (
                 <button
-                  onClick={() => { localStorage.removeItem(`logic_active_company_${user.uid}`); setActiveCompanyId(null); }}
+                  onClick={async () => {
+                    localStorage.removeItem(`logic_active_company_${user.uid}`);
+                    setActiveCompanyId(null);
+                    setActiveCompany(null);
+                    if (user) {
+                      await setDoc(doc(db, 'users', user.uid), { activeCompanyId: null }, { merge: true }).catch(console.error);
+                    }
+                  }}
                   className="text-[9px] lg:text-[10px] text-white font-bold px-2 lg:px-2.5 py-1 rounded-lg cursor-pointer transition select-none border"
                   style={{ backgroundColor: 'color-mix(in srgb, var(--brand-dark) 70%, black)', borderColor: 'color-mix(in srgb, var(--brand-primary) 35%, transparent)' }}
                   title="Cambiar de comercio / empresa"
@@ -7570,66 +7647,7 @@ export default function App() {
         </div>
       )}
 
-      {/* Company Selector — only for Google-authenticated owners/admins */}
-      {user && !isAuthLoading && !activeCompanyId && !isCredentialEmployee && (
-        <CompanySelector
-          companies={userCompanies}
-          userDisplayName={user.displayName}
-          userEmail={user.email}
-          onCreateCompany={handleCreateCompany}
-          onJoinWithCode={handleJoinCompanyWithCode}
-          onSelectCompany={(id) => {
-            localStorage.setItem(`logic_active_company_${user.uid}`, id);
-            setActiveCompanyId(id);
-          }}
-          onDeleteCompany={handleDeleteCompany}
-          onLogout={() => signOut(auth)}
-        />
-      )}
-
-      {/* Waiting screen for credential employees while Firestore resolves their company */}
-      {user && !isAuthLoading && !activeCompanyId && isCredentialEmployee && (
-        <div className="fixed inset-0 z-50 bg-slate-900 flex flex-col items-center justify-center p-6 text-center">
-          {credentialBootstrapFailed ? (
-            <>
-              <div className="w-16 h-16 rounded-2xl bg-rose-900/40 border border-rose-700/30 flex items-center justify-center mb-5">
-                <AlertCircle className="w-8 h-8 text-rose-400" />
-              </div>
-              <h2 className="text-xl font-black text-slate-100 mb-2">No pudimos verificar tu cuenta</h2>
-              <p className="text-slate-400 text-sm max-w-xs leading-relaxed mb-6">
-                Revisa tu conexión a internet e intenta de nuevo. Si el problema sigue, avisa a tu encargado.
-              </p>
-              <button
-                onClick={() => { setCredentialBootstrapFailed(false); setBootstrapRetryTrigger(n => n + 1); }}
-                className="px-6 py-2.5 mb-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl shadow cursor-pointer transition"
-              >
-                Reintentar
-              </button>
-            </>
-          ) : (
-            <>
-              <div className="w-16 h-16 rounded-2xl bg-indigo-900/40 border border-indigo-700/30 flex items-center justify-center mb-5">
-                <ShoppingCart className="w-8 h-8 text-indigo-400 animate-pulse" />
-              </div>
-              <h2 className="text-xl font-black text-slate-100 mb-2">Conectando al sistema...</h2>
-              <p className="text-slate-400 text-sm max-w-xs leading-relaxed mb-6">
-                Estamos verificando tus credenciales y cargando tu sucursal asignada.
-              </p>
-              <div className="flex gap-1.5 mb-8">
-                <span className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                <span className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                <span className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-              </div>
-            </>
-          )}
-          <button
-            onClick={() => signOut(auth)}
-            className="text-xs text-slate-500 hover:text-slate-300 underline cursor-pointer transition"
-          >
-            Salir e intentar de nuevo
-          </button>
-        </div>
-      )}
+      {/* The Company Selector and credential employee waiting screens are now handled via early return above */}
 
       {/* GLOBAL MOUNT CHECKPOINT: UNIFIED AUTHENTICATION SELECTION DIALOG (GOOGLE & DIRECT CREDENTIALS) */}
     </div>

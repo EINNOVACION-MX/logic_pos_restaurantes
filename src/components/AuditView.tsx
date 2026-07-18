@@ -89,7 +89,10 @@ const orderTotal = (order: Order, salesById: Map<string, Sale>): number => {
   // a raw sum of items for orders still open (no Sale yet) or missing/unmatched saleId.
   if (order.saleId) {
     const linkedSale = salesById.get(order.saleId);
-    if (linkedSale) return linkedSale.total;
+    if (linkedSale) {
+      if (linkedSale.status === 'Refunded') return 0;
+      return linkedSale.total;
+    }
   }
   return order.items.reduce((sum, it) => sum + it.unitPrice * it.quantity, 0);
 };
@@ -163,7 +166,9 @@ export default function AuditView({ companyName, sales, orders, cashRegisters, b
   const closedOrdersTotal = filteredOrders
     .filter(o => o.status === 'closed')
     .reduce((sum, o) => sum + orderTotal(o, salesById), 0);
-  const salesTotal = filteredSales.reduce((sum, s) => sum + s.total, 0);
+  const salesTotal = filteredSales
+    .filter(s => s.status === 'Completed')
+    .reduce((sum, s) => sum + s.total, 0);
 
   const clearFilters = () => {
     setWaiterFilter('all');
@@ -238,13 +243,24 @@ export default function AuditView({ companyName, sales, orders, cashRegisters, b
         <div className="bg-white border border-slate-200 p-5 rounded-3xl shadow-xs">
           <p className="text-[10px] text-slate-500 font-bold uppercase">Ventas (filtro actual)</p>
           <p className="text-2xl font-black text-slate-800 mt-1">{formatMXN(salesTotal)}</p>
-          <p className="text-[11px] text-slate-400 font-medium">{filteredSales.length} transacciones</p>
+          <p className="text-[11px] text-slate-400 font-medium">
+            {(() => {
+              const completed = filteredSales.filter(s => s.status === 'Completed').length;
+              const refunded = filteredSales.filter(s => s.status === 'Refunded').length;
+              return `${completed} completadas${refunded > 0 ? ` · ${refunded} reembolsadas` : ''}`;
+            })()}
+          </p>
         </div>
         <div className="bg-white border border-slate-200 p-5 rounded-3xl shadow-xs">
           <p className="text-[10px] text-slate-500 font-bold uppercase">Cuentas cerradas (filtro actual)</p>
           <p className="text-2xl font-black text-slate-800 mt-1">{formatMXN(closedOrdersTotal)}</p>
           <p className="text-[11px] text-slate-400 font-medium">
-            {filteredOrders.filter(o => o.status === 'closed').length} cerradas · {filteredOrders.filter(o => o.status === 'open').length} abiertas
+            {(() => {
+              const activeClosed = filteredOrders.filter(o => o.status === 'closed' && salesById.get(o.saleId || '')?.status !== 'Refunded').length;
+              const refundedClosed = filteredOrders.filter(o => o.status === 'closed' && salesById.get(o.saleId || '')?.status === 'Refunded').length;
+              const openOrders = filteredOrders.filter(o => o.status === 'open').length;
+              return `${activeClosed} activas${refundedClosed > 0 ? ` · ${refundedClosed} reembolsadas` : ''} · ${openOrders} abiertas`;
+            })()}
           </p>
         </div>
         <div className="bg-white border border-slate-200 p-5 rounded-3xl shadow-xs">
@@ -287,7 +303,13 @@ export default function AuditView({ companyName, sales, orders, cashRegisters, b
                       {s.status === 'Refunded' ? 'Reembolsada' : 'Completada'}
                     </span>
                   </td>
-                  <td className="px-4 py-2 text-right font-black text-slate-800">{formatMXN(s.total)}</td>
+                  <td className="px-4 py-2 text-right font-black text-slate-800">
+                    {s.status === 'Refunded' ? (
+                      <span className="line-through text-slate-400">{formatMXN(s.total)}</span>
+                    ) : (
+                      formatMXN(s.total)
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -324,11 +346,37 @@ export default function AuditView({ companyName, sales, orders, cashRegisters, b
                   <td className="px-4 py-2 text-slate-600">{o.openedAt}</td>
                   <td className="px-4 py-2 text-slate-600">{o.closedAt || '—'}</td>
                   <td className="px-4 py-2">
-                    <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${o.status === 'open' ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600'}`}>
-                      {o.status === 'open' ? 'Abierta' : 'Cerrada'}
-                    </span>
+                    {(() => {
+                      const linkedSale = o.saleId ? salesById.get(o.saleId) : null;
+                      if (linkedSale && linkedSale.status === 'Refunded') {
+                        return (
+                          <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-rose-50 text-rose-600">
+                            Reembolsada
+                          </span>
+                        );
+                      }
+                      return (
+                        <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${o.status === 'open' ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                          {o.status === 'open' ? 'Abierta' : 'Cerrada'}
+                        </span>
+                      );
+                    })()}
                   </td>
-                  <td className="px-4 py-2 text-right font-black text-slate-800">{formatMXN(orderTotal(o, salesById))}</td>
+                  <td className="px-4 py-2 text-right font-black text-slate-800">
+                    {(() => {
+                      const linkedSale = o.saleId ? salesById.get(o.saleId) : null;
+                      const isRefunded = linkedSale && linkedSale.status === 'Refunded';
+                      if (isRefunded) {
+                        const originalAmt = linkedSale ? linkedSale.total : o.items.reduce((sum, it) => sum + it.unitPrice * it.quantity, 0);
+                        return (
+                          <span className="line-through text-slate-400">
+                            {formatMXN(originalAmt)}
+                          </span>
+                        );
+                      }
+                      return formatMXN(orderTotal(o, salesById));
+                    })()}
+                  </td>
                 </tr>
               ))}
             </tbody>

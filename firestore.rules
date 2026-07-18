@@ -281,10 +281,9 @@ service cloud.firestore {
               existing().role != 'owner')
           );
 
-        // Deleting/removing a member: owner can remove anyone; admin only employee/admin targets
+        // Deleting/removing a member: ONLY owner can remove members
         allow delete: if isVerifiedUser() && isMemberOfCompany(companyId) && (
-          getMemberRole(companyId) == 'owner' ||
-          (getMemberRole(companyId) == 'admin' && existing().role != 'owner')
+          getMemberRole(companyId) == 'owner'
         );
       }
 

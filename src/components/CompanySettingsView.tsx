@@ -1454,7 +1454,7 @@ export default function CompanySettingsView({
                         )}
                         
                         {/* Remove Employee button */}
-                        {member.role !== 'owner' && (currentUserRole === 'owner' || (currentUserRole === 'admin' && (member.role === 'employee' || member.role === 'mesero'))) && (
+                        {member.role !== 'owner' && currentUserRole === 'owner' && (
                           deleteConfirmMemberId === member.userId ? (
                             <button
                               type="button"
