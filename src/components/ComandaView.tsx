@@ -613,7 +613,7 @@ export default function ComandaView({
       )}
 
       {/* LEFT COLUMN: Order status, round details, and checkout trigger */}
-      <div className={`${activeMobileTab === 'comanda' ? 'flex' : 'hidden'} lg:flex-1 lg:max-w-[384px] flex-col bg-white border border-slate-200 rounded-3xl p-5 shadow-sm overflow-hidden h-full`}>
+      <div className={`${activeMobileTab === 'comanda' ? 'flex-grow' : 'hidden'} lg:flex lg:w-96 lg:flex-shrink-0 flex-col bg-white border border-slate-200 rounded-3xl p-5 shadow-sm overflow-hidden h-full`}>
         
         {/* Table Details Header */}
         <div className="flex justify-between items-start pb-4 border-b border-slate-100 shrink-0">
