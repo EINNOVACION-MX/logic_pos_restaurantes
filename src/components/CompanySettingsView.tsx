@@ -1627,7 +1627,7 @@ export default function CompanySettingsView({
                       <button
                         onClick={handleGenerateInvoiceInvitationCode}
                         disabled={isUpdating}
-                        className="mx-auto px-5 py-2.5 bg-indigo-600 hover:bg-indigo-750 text-white font-black text-xs rounded-xl shadow cursor-pointer transition flex items-center space-x-2"
+                        className="mx-auto px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs rounded-xl shadow cursor-pointer transition flex items-center space-x-2"
                       >
                         <RefreshCw className={`w-3.5 h-3.5 ${isUpdating ? 'animate-spin' : ''}`} />
                         <span>Generar Código con las Opciones Seleccionadas</span>
@@ -1674,7 +1674,7 @@ export default function CompanySettingsView({
                   <button
                     type="submit"
                     disabled={isUpdating || !editedCompanyName.trim() || editedCompanyName === companyName}
-                    className="px-4 py-2.5 bg-indigo-650 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-xl shadow-md cursor-pointer transition flex items-center space-x-2 disabled:opacity-50"
+                    className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-xl shadow-md cursor-pointer transition flex items-center space-x-2 disabled:opacity-50"
                   >
                     <span>Guardar Cambios</span>
                   </button>

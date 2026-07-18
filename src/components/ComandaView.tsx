@@ -613,7 +613,7 @@ export default function ComandaView({
       )}
 
       {/* LEFT COLUMN: Order status, round details, and checkout trigger */}
-      <div className={`${activeMobileTab === 'comanda' ? 'flex' : 'hidden'} lg:flex-1 lg:max-w-[384px] flex-col bg-white border border-slate-200 rounded-3xl p-5 shadow-sm overflow-hidden h-full`}>
+      <div className={`${activeMobileTab === 'comanda' ? 'flex flex-1 min-h-0' : 'hidden'} lg:flex lg:flex-1 lg:max-w-[384px] flex-col bg-white border border-slate-200 rounded-3xl p-5 shadow-sm overflow-hidden lg:h-full`}>
         
         {/* Table Details Header */}
         <div className="flex justify-between items-start pb-4 border-b border-slate-100 shrink-0">
@@ -730,7 +730,7 @@ export default function ComandaView({
                           <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
                             Ronda #{rNum} (Enviada)
                           </h4>
-                          <span className="text-[9px] text-slate-450 font-bold flex items-center gap-1">
+                          <span className="text-[9px] text-slate-400 font-bold flex items-center gap-1">
                             <Lock className="w-2.5 h-2.5" />Listo / En Preparación
                           </span>
                         </div>
@@ -891,7 +891,7 @@ export default function ComandaView({
 
       {/* RIGHT COLUMN: Product Catalog selection */}
       {order && (
-        <div className={`${activeMobileTab === 'menu' ? 'flex-grow' : 'hidden'} lg:flex flex-grow flex-col bg-white border border-slate-200 rounded-3xl p-5 shadow-sm overflow-hidden h-full`}>
+        <div className={`${activeMobileTab === 'menu' ? 'flex flex-grow flex-1' : 'hidden'} lg:flex lg:flex-grow flex-col bg-white border border-slate-200 rounded-3xl p-5 shadow-sm overflow-hidden lg:h-full`}>
           
           {/* Search and Categories bar */}
           <div className="space-y-3 shrink-0 pb-3 border-b border-slate-100">
@@ -902,7 +902,7 @@ export default function ComandaView({
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
                 placeholder="Buscar platillo, bebida o postre..."
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-xs outline-none focus:border-[var(--brand-primary,#6366f1)] focus:ring-1 focus:ring-[var(--brand-primary,#6366f1)] font-medium text-slate-750"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-xs outline-none focus:border-[var(--brand-primary,#6366f1)] focus:ring-1 focus:ring-[var(--brand-primary,#6366f1)] font-medium text-slate-700"
               />
             </div>
 
@@ -927,7 +927,7 @@ export default function ComandaView({
           {/* Grid Products list */}
           <div className="flex-1 overflow-y-auto grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4 p-1.5 mt-2">
             {filteredProducts.length === 0 ? (
-              <div className="col-span-full flex flex-col items-center justify-center py-16 text-center text-slate-450">
+              <div className="col-span-full flex flex-col items-center justify-center py-16 text-center text-slate-400">
                 <HelpCircle className="w-10 h-10 mb-2 stroke-1" />
                 <h5 className="font-extrabold text-xs uppercase tracking-wider text-slate-500">Sin coincidencias</h5>
                 <p className="text-[10px] mt-1">No se encontraron productos en esta categoría.</p>
@@ -995,7 +995,7 @@ export default function ComandaView({
                   <Ticket className="w-5 h-5 text-indigo-500" />
                   <span>Cierre de Cuenta — Mesa {table.name}</span>
                 </h3>
-                <p className="text-[10px] text-slate-450 font-bold uppercase mt-0.5">Folio Comanda: {order.id}</p>
+                <p className="text-[10px] text-slate-400 font-bold uppercase mt-0.5">Folio Comanda: {order.id}</p>
               </div>
               <button
                 onClick={() => setIsCheckoutOpen(false)}
@@ -1047,7 +1047,7 @@ export default function ComandaView({
                         Efectivo Recibido
                       </label>
                       <div className="relative">
-                        <DollarSign className="w-4 h-4 text-slate-450 absolute left-3 top-3" />
+                        <DollarSign className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
                         <input
                           type="number"
                           value={receivedCashAmount}

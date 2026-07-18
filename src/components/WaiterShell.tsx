@@ -329,8 +329,8 @@ export default function WaiterShell({
                   onClick={() => setOrderStatusFilter('open')}
                   className={`px-3 py-1.5 text-xs font-extrabold rounded-lg cursor-pointer transition select-none flex items-center gap-1 ${
                     orderStatusFilter === 'open'
-                      ? 'bg-indigo-650 text-white shadow-sm'
-                      : 'text-slate-550 hover:bg-slate-50'
+                      ? 'bg-indigo-600 text-white shadow-sm'
+                      : 'text-slate-500 hover:bg-slate-50'
                   }`}
                 >
                   <FolderOpen className="w-3.5 h-3.5" />
@@ -340,8 +340,8 @@ export default function WaiterShell({
                   onClick={() => setOrderStatusFilter('closed')}
                   className={`px-3 py-1.5 text-xs font-extrabold rounded-lg cursor-pointer transition select-none flex items-center gap-1 ${
                     orderStatusFilter === 'closed'
-                      ? 'bg-indigo-650 text-white shadow-sm'
-                      : 'text-slate-550 hover:bg-slate-50'
+                      ? 'bg-indigo-600 text-white shadow-sm'
+                      : 'text-slate-500 hover:bg-slate-50'
                   }`}
                 >
                   <CheckCircle className="w-3.5 h-3.5" />
@@ -357,7 +357,7 @@ export default function WaiterShell({
                 <h3 className="font-extrabold text-sm text-slate-700">
                   Sin comandas {orderStatusFilter === 'open' ? 'abiertas' : 'cerradas'}
                 </h3>
-                <p className="text-xs text-slate-550 mt-1 max-w-xs mx-auto">
+                <p className="text-xs text-slate-500 mt-1 max-w-xs mx-auto">
                   {orderStatusFilter === 'open' 
                     ? 'No tienes comandas activas en este momento. Ve al Mapa de Mesas para tomar una orden.'
                     : 'No tienes comandas registradas como cerradas/cobradas en este periodo.'}
@@ -421,12 +421,12 @@ export default function WaiterShell({
                         {/* Items list preview */}
                         <div className="mt-3 space-y-1 max-h-16 overflow-hidden">
                           {order.items.slice(0, 3).map((it, idx) => (
-                            <p key={idx} className="text-[10px] text-slate-550 truncate font-semibold">
+                            <p key={idx} className="text-[10px] text-slate-500 truncate font-semibold">
                               • {it.quantity}x {it.name}
                             </p>
                           ))}
                           {order.items.length > 3 && (
-                            <p className="text-[9px] text-slate-450 font-bold pl-2">
+                            <p className="text-[9px] text-slate-400 font-bold pl-2">
                               + {order.items.length - 3} artículos más...
                             </p>
                           )}
@@ -435,7 +435,7 @@ export default function WaiterShell({
 
                       <div className="flex justify-between items-center pt-3 border-t border-slate-100 mt-3 w-full shrink-0">
                         <span className="text-xs font-bold text-slate-400">Total:</span>
-                        <span className="text-sm font-black text-indigo-650">{formatMXN(total)}</span>
+                        <span className="text-sm font-black text-indigo-600">{formatMXN(total)}</span>
                       </div>
                     </button>
                   );

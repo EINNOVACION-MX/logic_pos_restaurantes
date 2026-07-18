@@ -4784,14 +4784,14 @@ export default function App() {
                   <div className="flex gap-2 flex-wrap">
                     <button
                       onClick={handleExportProducts}
-                      className="bg-emerald-600 hover:bg-emerald-705 text-white font-extrabold text-sm px-4 py-2.5 rounded-xl flex items-center whitespace-nowrap gap-2 cursor-pointer shadow-sm transition"
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-sm px-4 py-2.5 rounded-xl flex items-center whitespace-nowrap gap-2 cursor-pointer shadow-sm transition"
                       title="Exportar catálogo completo con existencias multisuccursal a CSV"
                     >
                       <Download className="w-4 h-4" />Exportar Inventario (CSV)
                     </button>
                     <button
                       onClick={() => setIsCategoryModalOpen(true)}
-                      className="bg-slate-100 hover:bg-slate-200 text-slate-705 border border-slate-200 font-extrabold text-sm px-4 py-2.5 rounded-xl flex items-center whitespace-nowrap gap-2 cursor-pointer shadow-sm transition"
+                      className="bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 font-extrabold text-sm px-4 py-2.5 rounded-xl flex items-center whitespace-nowrap gap-2 cursor-pointer shadow-sm transition"
                     >
                       <Layers className="w-4 h-4 text-slate-500" />
                       Editar Categorías
@@ -5254,7 +5254,7 @@ export default function App() {
                       setOpeningCashInput('500');
                       setIsOpeningCajaModalOpen(true);
                     }}
-                    className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-indigo-600 to-indigo-750 hover:from-indigo-700 hover:to-indigo-800 text-white font-extrabold text-xs rounded-xl shadow cursor-pointer transition uppercase tracking-wider animate-pulse"
+                    className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white font-extrabold text-xs rounded-xl shadow cursor-pointer transition uppercase tracking-wider animate-pulse"
                   >
                     Realizar Apertura de Caja
                   </button>
@@ -5632,7 +5632,7 @@ export default function App() {
                     <TrendingUp className="w-4 h-4 text-emerald-500" />
                   </div>
                   <p className="text-2xl font-extrabold text-slate-800 mt-2">{formatMXN(stats.grossRevenue)}</p>
-                  <p className="text-[10px] text-slate-550 mt-2">Ventas finalizadas con éxito</p>
+                  <p className="text-[10px] text-slate-500 mt-2">Ventas finalizadas con éxito</p>
                 </div>
 
                 <div className="bg-white rounded-2xl p-4 border shadow-sm">
@@ -5737,7 +5737,7 @@ export default function App() {
                         const pctWidth = maxVal > 0 ? (numVal / maxVal) * 100 : 0;
                         return (
                           <div key={cat} className="space-y-1">
-                            <div className="flex justify-between text-xs font-bold text-slate-705">
+                            <div className="flex justify-between text-xs font-bold text-slate-700">
                               <span>{cat}</span>
                               <span className="text-indigo-600">{val} uds. vendidas</span>
                             </div>
@@ -5771,7 +5771,7 @@ export default function App() {
                       {stats.lowStockItems.map(p => (
                         <div key={p.id} className="bg-slate-50 border border-slate-100 flex justify-between items-center p-2.5 rounded-xl">
                           <div>
-                            <p className="text-xs font-bold text-slate-850">{p.name}</p>
+                            <p className="text-xs font-bold text-slate-800">{p.name}</p>
                             <p className="text-[9px] text-slate-400">Mínimo sugerido: {p.minStock}</p>
                           </div>
                           <div className="text-right">
@@ -5868,11 +5868,11 @@ export default function App() {
                         <div className="space-y-2 border-t border-slate-100 pt-3 text-xs leading-relaxed">
                           <div className="flex justify-between">
                             <span className="text-slate-400 font-bold uppercase text-[9px]">Dirección:</span>
-                            <span className="font-semibold text-slate-705 max-w-[150px] truncate" title={branch.address}>{branch.address || 'Sin registrar'}</span>
+                            <span className="font-semibold text-slate-700 max-w-[150px] truncate" title={branch.address}>{branch.address || 'Sin registrar'}</span>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-slate-400 font-bold uppercase text-[9px]">Teléfono:</span>
-                            <span className="font-semibold text-slate-705">{branch.phone || 'Sin registrar'}</span>
+                            <span className="font-semibold text-slate-700">{branch.phone || 'Sin registrar'}</span>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-slate-400 font-bold uppercase text-[9px]">Gerente / Resp:</span>
@@ -5992,14 +5992,14 @@ export default function App() {
                           </div>
                         </div>
 
-                        <div className="space-y-2 border-t border-slate-105 pt-3 text-xs leading-relaxed">
+                        <div className="space-y-2 border-t border-slate-100 pt-3 text-xs leading-relaxed">
                           <div className="flex justify-between">
                             <span className="text-slate-400 font-bold uppercase text-[9px]">Contacto:</span>
-                            <span className="font-semibold text-slate-705">{supplier.contactName || 'Sin registrar'}</span>
+                            <span className="font-semibold text-slate-700">{supplier.contactName || 'Sin registrar'}</span>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-slate-400 font-bold uppercase text-[9px]">Teléfono:</span>
-                            <span className="font-semibold text-slate-705 font-mono">{supplier.phone || 'Sin registrar'}</span>
+                            <span className="font-semibold text-slate-700 font-mono">{supplier.phone || 'Sin registrar'}</span>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-slate-400 font-bold uppercase text-[9px]">Email:</span>
@@ -6007,13 +6007,13 @@ export default function App() {
                           </div>
                           <div className="flex justify-between">
                             <span className="text-slate-400 font-bold uppercase text-[9px]">Dirección:</span>
-                            <span className="font-semibold text-slate-705 max-w-[150px] truncate" title={supplier.address}>{supplier.address || 'Sin registrar'}</span>
+                            <span className="font-semibold text-slate-700 max-w-[150px] truncate" title={supplier.address}>{supplier.address || 'Sin registrar'}</span>
                           </div>
                         </div>
 
                         {/* Associated Products metrics */}
-                        <div className="bg-amber-50/20 border border-amber-105/40 p-3 rounded-2xl">
-                          <div className="flex justify-between items-center text-xs font-bold text-slate-705">
+                        <div className="bg-amber-50/20 border border-amber-100/40 p-3 rounded-2xl">
+                          <div className="flex justify-between items-center text-xs font-bold text-slate-700">
                             <span>Productos Surtidos:</span>
                             <span className="text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-full text-[10px] font-black">{linkedProducts.length} artículos</span>
                           </div>
@@ -6480,7 +6480,7 @@ export default function App() {
                           setProdForm({ ...prodForm, category: e.target.value });
                         }
                       }}
-                      className="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg p-2.5 outline-none focus:border-indigo-55 font-bold text-slate-700"
+                      className="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg p-2.5 outline-none focus:border-indigo-500 font-bold text-slate-700"
                     >
                       {!prodForm.category && <option value="">-- Seleccionar Categoría --</option>}
                       {selectCategoriesList.map(cat => (
@@ -7251,7 +7251,7 @@ export default function App() {
                   <div className="bg-indigo-50 border border-indigo-100 p-3 rounded-xl space-y-1">
                     <div className="flex justify-between items-center text-xs font-bold text-indigo-900">
                       <span>Total Egreso en Caja:</span>
-                      <span className="text-sm font-black text-indigo-650">
+                      <span className="text-sm font-black text-indigo-600">
                         {formatMXN(parseInt(restockForm.qty) * parseFloat(restockForm.cost))}
                       </span>
                     </div>
@@ -7527,7 +7527,7 @@ export default function App() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-500">Efectivo Sugerido (Sistema):</span>
-                  <span className="font-mono text-indigo-750 font-extrabold">{formatMXN(cashRegister.currentCash)}</span>
+                  <span className="font-mono text-indigo-700 font-extrabold">{formatMXN(cashRegister.currentCash)}</span>
                 </div>
               </div>
 
@@ -7664,7 +7664,7 @@ const CategorySelectorRowItem = ({ cat, onRename }: { cat: string; onRename: (ol
           type="text"
           value={name}
           onChange={e => setName(e.target.value)}
-          className="flex-grow bg-white border border-slate-200 px-2.5 py-1 rounded-lg text-slate-750 font-bold focus:ring-1 focus:ring-indigo-505 outline-none text-xs"
+          className="flex-grow bg-white border border-slate-200 px-2.5 py-1 rounded-lg text-slate-700 font-bold focus:ring-1 focus:ring-indigo-500 outline-none text-xs"
         />
       ) : (
         <span className="font-bold text-slate-700 px-1">{cat}</span>
